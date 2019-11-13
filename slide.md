@@ -13,14 +13,14 @@
 * Twitter : [@pink_bangbi](https://twitter.com/pink_bangbi)
 * github  : [osyo-manga](https://github.com/osyo-manga)
 * ブログ  : [Secret Garden(Instrumental)](http://secret-garden.hatenablog.com)
-* Rails 歴 1年半              <!-- .element: class="fragment" -->
-* 最近のトレンド              <!-- .element: class="fragment" -->
+* Rails 歴 1年半
+* 最近のトレンド
   * `binding_of_caller`
   * `solargraph`
 
 ---
 
-## 今日話すこと
+# 今日話すこと
 
 ---
 
@@ -97,7 +97,7 @@
 %w{72 101 108 108 111}.map { |it| it.to_i.chr }
 # => ["H", "e", "l", "l", "o"]
 
-# メソッドチェーンであればこういうふうい記述できるが…
+# メソッドチェーンであればこういう風に記述できるが…
 %w{72 101 108 108 111}.map(&:to_i.to_proc >> :chr.to_proc)
 # => ["H", "e", "l", "l", "o"]
 ```
@@ -171,7 +171,7 @@ lambda { |a, b| }.call 1
 # Error
 lambda { |a, b| }.call 1, 2, 3
 ```
-  <!-- .element: class="fragment" -->
+<!-- .element: class="fragment" -->
 
 >>>
 
@@ -201,17 +201,26 @@ lambda { _1 + _2 }.call 1, 2, 3
 * Proc#parameters で仮引数の定義を取得出来る            <!-- .element: class="fragment" -->
 
 ```ruby
-p proc { |a, b| }.parameters
+proc { |a, b| }.parameters
 # => [[:opt, :a], [:opt, :b]]
 
-p proc { _1 + _2 }.parameters
+ambda { |a, b| }.parameters
+# => [[:req, :a], [:req, :a]]
+```
+<!-- .element: class="fragment" -->
+
+```ruby
+proc { _1 + _2 }.parameters
 # => [[:opt, :_1], [:opt, :_2]]
 
-p lambda { |a, b| }.parameters
-# => [[:req, :a], [:req, :a]]
-
-p lambda { _1 + _2 }.parameters
+lambda { _1 + _2 }.parameters
 # => [[:req, :_1], [:req, :_2]]
+```
+<!-- .element: class="fragment" -->
+
+```ruby
+proc { _9 }.parameters
+# => [[:opt, :_1], [:opt, :_2], [:opt, :_3], [:opt, :_4], [:opt, :_5], [:opt, :_6], [:opt, :_7], [:opt, :_8], [:opt, :_9]]
 ```
 <!-- .element: class="fragment" -->
 
@@ -248,7 +257,7 @@ proc { [_1, _2] }.call [1, 2] # => [1, 2]
 #### 注意点！
 - - -
 
-* _2 を使ったか使ってないかで _1 の意味が変わる
+* _2 を使ったか使ってないかで _1 の意味が変わる                   <!-- .element: class="fragment" -->
 
 ```ruby
 # _1 だけ
@@ -307,7 +316,6 @@ proc {
 ```
 <!-- .element: class="fragment" -->
 
-
 ---
 
 #### 警告になったりエラーになったり
@@ -336,7 +344,7 @@ proc {
 
 ```ruby
 # Error: ordinary parameter is defined
-proc { |i| _1 }.call
+proc { |it| _1 }.call
 ```
 <!-- .element: class="fragment" -->
 
@@ -345,11 +353,11 @@ proc { |i| _1 }.call
 #### その他
 - - -
 
-* _1 ~ _9 まで使用できる
-* def で定義したメソッド内では参照できない
-* ナンパラでブロック引数は参照できない
-  * 全部の仮引数を定義する必要がある
-* _1 という名前は変数名やメソッド名で有効な名前なのでそういうケースで使用する場合は注意する
+* _1 ~ _9 まで使用できる               <!-- .element: class="fragment" -->
+* def で定義したメソッド内では参照できない               <!-- .element: class="fragment" -->
+* ナンパラでブロック引数は参照できない               <!-- .element: class="fragment" -->
+  * 全部の仮引数を定義する必要がある               <!-- .element: class="fragment" -->
+* _1 という名前は変数名やメソッド名で有効な名前なので併用して使用する場合は注意する               <!-- .element: class="fragment" -->
 
 ---
 
@@ -379,49 +387,71 @@ proc {
 ## 答えは
 ## 3. :local_variable                        <!-- .element: class="fragment" -->
 # 🤔                        <!-- .element: class="fragment" -->
+## ナンパラなにもわからない                 <!-- .element: class="fragment" -->
 
 ---
 
-#### eval("_1") を使用した場合の挙動
+#### _1 という名前で変数を定義した場合
 - - -
 
-```ruby
-# Error: undefined local variable or method `_1' for main:Object (NameError)
-proc { eval("_1") }.call 42
-```
-<!-- .element: class="fragment" -->
+* ナンパラよりもローカル変数を優先する             <!-- .element: class="fragment" -->
 
 ```ruby
-# OK : ナンパラ _1 を参照する
-proc { _1; eval("_1") }.call 42   # => 42
-```
-<!-- .element: class="fragment" -->
+# _1 という名前のローカル変数が定義できる
+_1 = :local_variable
 
-```ruby
-proc {
-  _1
-  # OK : 一番内側のナンパラを参照する
-  proc { eval("_1") }.call "B"   # => "A"
-}.call "A"
+# この場合はナンパラではなくてローカル変数を返す
+proc { _1 }.call 42
+# => :local_variable
 ```
 <!-- .element: class="fragment" -->
 
 ```ruby
 _1 = :local_variable
-p proc {
-  _1
-  # OK? : 内側のナンパラではなくて外にあるローカル変数を参照する
-  proc { eval("_1") }.call "B"   # => :local_variable
-}.call "A"
+proc {
+  _1                        # => :local_variable
+  eval("_1")                # => :local_variable
+  proc { eval("_1") }.call  # => :local_variable
+}.call 42
+```
+<!-- .element: class="fragment" -->
+
+
+---
+
+### _1 って変数定義するのやめろ！！！
+
+---
+
+
+#### _1 という名前のメソッドを定義した場合
+- - -
+
+* メソッドよりもナンパラを優先する             <!-- .element: class="fragment" -->
+* メソッドぽい呼び出し方だとメソッドを呼ぶ             <!-- .element: class="fragment" -->
+
+```ruby
+# メソッドを定義
+def _1(a = :method); a; end
+
+# ナンパラを呼び出す
+proc { _1 }.call 42  # => 42
+```
+<!-- .element: class="fragment" -->
+
+```ruby
+# メソッドを定義
+def _1(a = :method); a; end
+
+# メソッドっぽい呼び出しはメソッドを呼ぶ
+proc { _1() }.call 42       # => :method
+proc { self._1 }.call 42    # => :method
+proc { _1(3) }.call 42      # => 3
+proc { eval("_1") }.call 42 # => :method
 ```
 <!-- .element: class="fragment" -->
 
 ---
-
-## ナンパラなにもわからない
-
----
-
 
 ### まとめ
 - - -
@@ -432,6 +462,7 @@ p proc {
 * 普通に使う分には問題ない!!!                 <!-- .element: class="fragment" -->
 * 変な使い方をするとハマる                   <!-- .element: class="fragment" -->
   * eval とか binding.local_variable_get とか使えばメタ的に取得できなくもないが…
+  * _1 という名前の変数は定義しない！
 * 変な使い方があれば教えて下さい！                 <!-- .element: class="fragment" -->
 
 ---
